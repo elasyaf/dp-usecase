@@ -1,13 +1,27 @@
-name: Docker Image CI
+name: Build and Push Docker Image to ECR
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [main]
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file build/nginx/Dockerfile --tag dp/webserver:$(date +%s)
+      - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1  # Replace with your desired region
+
+      - name: Login to ECR
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin
+
+      - name: Build the Docker Image
+        run: docker build . --file build/nginx/Dockerfile --tag dp/webserver:$GITHUB_SHA
+
+      - name: Tag the Image for ECR
+        run: docker tag dp/webserver:$GITHUB_SHA ${{ secrets.AWS_ID }}.dkr.ecr.us-east-1.amazonaws.com/dp/webserver:$GITHUB_SHA
+
+      - name: Push the Image to ECR
+        run: docker push ${{ secrets.AWS_ID }}.dkr.ecr.us-east-1.amazonaws.com/dp/webserver:$GITHUB_SHA
