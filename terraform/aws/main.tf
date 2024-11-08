@@ -83,7 +83,7 @@ module "asg" {
   update_default_version              = true
   image_id                            = "ami-08f49baa317796afd"
   instance_type                       = "t2.medium"
-  ebs_optimized                       = false
+  ebs_optimized                       = true
   enable_monitoring                   = true
   create_iam_instance_profile         = true
   iam_role_name                       = "nginx-asg-template"
@@ -111,6 +111,15 @@ module "asg" {
     }
   ]
 
+  network_interfaces = [
+    {
+      delete_on_termination = true
+      description           = "eth0"
+      device_index          = 0
+      security_groups       = ["sg-09e4bc4a961e1f5af"]
+    }
+  ]
+
   # This will ensure imdsv2 is enabled, required, and a single hop which is aws security
   # best practices
   # See https://docs.aws.amazon.com/securityhub/latest/userguide/autoscaling-controls.html#autoscaling-4
@@ -125,71 +134,21 @@ module "asg" {
   }
 
   tags = {
-    Environment = "Experiments"
-    Project     = "durianpay"
+    Terraform     = "true"
+    Product       = "durianpay"
+    Environment   = "technical-test"
   }
   user_data = <<-EOT
-IyEvYmluL2Jhc2gKCnN1ZG8geXVtIHVwZGF0ZSAteQpzdWRvIHl1bSBpbnN0YWxs
-IC15IHl1bS11dGlscyBkZXZpY2UtbWFwcGVyLXBlcnNpc3RlbnQtZGF0YSBsdm0y
-CnN1ZG8geXVtIGluc3RhbGwgZG9ja2VyIC15CnN1ZG8gc3lzdGVtY3RsIGVuYWJs
-ZSBkb2NrZXIKc3VkbyBzeXN0ZW1jdGwgc3RhcnQgZG9ja2VyCnN1ZG8gdXNlcm1v
-ZCAtYUcgZG9ja2VyICRVU0VSCm5ld2dycCBkb2NrZXIKYXdzIGVjciBnZXQtbG9n
-aW4tcGFzc3dvcmQgLS1yZWdpb24gYXAtc291dGhlYXN0LTEgfCBkb2NrZXIgbG9n
-aW4gLS11c2VybmFtZSBBV1MgLS1wYXNzd29yZC1zdGRpbiA1MzY2OTcyNjA0NjIu
-ZGtyLmVjci5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tCmRvY2tlciBydW4g
-LS1uYW1lIHdlYnNlcnZlciAtcCA4MDgwOjgwIDUzNjY5NzI2MDQ2Mi5ka3IuZWNy
-LmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vZHAvd2Vic2VydmVyOmxhdGVz
-dAo=
+IyEvYmluL2Jhc2gKCnN1ZG8gc3UKeXVtIHVwZGF0ZSAteQp5dW0gaW5zdGFsbCAt
+eSB5dW0tdXRpbHMgZGV2aWNlLW1hcHBlci1wZXJzaXN0ZW50LWRhdGEgbHZtMgp5
+dW0gaW5zdGFsbCAteSB5dW0tdXRpbHMgZGV2aWNlLW1hcHBlci1wZXJzaXN0ZW50
+LWRhdGEgbHZtMgp5dW0gaW5zdGFsbCBkb2NrZXIgLXkKc3lzdGVtY3RsIGVuYWJs
+ZSBkb2NrZXIKc3lzdGVtY3RsIHN0YXJ0IGRvY2tlcgphd3MgZWNyIGdldC1sb2dp
+bi1wYXNzd29yZCAtLXJlZ2lvbiBhcC1zb3V0aGVhc3QtMSB8IGRvY2tlciBsb2dp
+biAtLXVzZXJuYW1lIEFXUyAtLXBhc3N3b3JkLXN0ZGluIDUzNjY5NzI2MDQ2Mi5k
+a3IuZWNyLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20KZG9ja2VyIHJ1biAt
+ZCAtLW5hbWUgd2Vic2VydmVyIC1wIDgwOjgwODAgNTM2Njk3MjYwNDYyLmRrci5l
+Y3IuYXAtc291dGhlYXN0LTEuYW1hem9uYXdzLmNvbS9kcC93ZWJzZXJ2ZXI6bGF0
+ZXN0Cg==
   EOT
-}
-
-module "cpu_metric_alarm" {
-  source              = "terraform-aws-modules/cloudwatch/aws//modules/metric-alarm"
-  version             = "~> 3.0"
-  alarm_name          = "AlarmHighforCPU"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = "120"
-  statistic           = "Average"
-  threshold           = "45"
-  alarm_description   = "EC2 CPU Monitoring"
-  dimensions = {
-    AutoScalingGroupName = "nginx-asg-20241108074005082100000002"
-  }
-}
-
-module "status_check_failed_metric_alarm" {
-  source              = "terraform-aws-modules/cloudwatch/aws//modules/metric-alarm"
-  version             = "~> 3.0"
-  alarm_name          = "StatusCheckFailedAlarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "StatusCheckFailed"
-  namespace           = "AWS/EC2"
-  period              = "120"
-  statistic           = "Sum"
-  threshold           = "1"
-  alarm_description   = "Failed status check Monitoring"
-  dimensions = {
-    AutoScalingGroupName = "nginx-asg-20241108074005082100000002"
-  }
-}
-
-module "net_usage_alarm" {
-  source              = "terraform-aws-modules/cloudwatch/aws//modules/metric-alarm"
-  version             = "~> 3.0"
-  alarm_name          = "NetUsageAlarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "NetworkIn"
-  namespace           = "AWS/EC2"
-  period              = "120"
-  statistic           = "SampleCount"
-  threshold           = "1000"
-  alarm_description   = "High traffic income"
-  dimensions = {
-    AutoScalingGroupName = "nginx-asg-20241108074005082100000002"
-  }
 }
