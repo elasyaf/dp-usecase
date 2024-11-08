@@ -37,22 +37,15 @@ module "net-sg" {
   ]
 }
 
-module "nginx_asg_key" {
-  source      = "terraform-aws-modules/key-pair/aws"
-  key_name    = "nginx-asg-keypair"
-  public_key  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICGk7+ldhzxB3asdhBK1kwg5iBzf512BpwymIJLfJ9q6 hellonan@Hellonan"
-}
-
 module "asg" {
   source                    = "terraform-aws-modules/autoscaling/aws"
   name                      = "nginx-asg"
+  desired_capacity          = 2
   min_size                  = 2
   max_size                  = 5
-  desired_capacity          = 2
   health_check_type         = "EC2"
   vpc_zone_identifier       = ["subnet-0a6986e8c6eff425d"]
-  security_groups           = ["sg-09e4bc4a961e1f5af"]
-  key_name                  = "nginx-asg-keypair"  
+  security_groups           = ["sg-09e4bc4a961e1f5af"]  
   scaling_policies = {
     cpuPolicy = {
       policy_type               = "TargetTrackingScaling"
