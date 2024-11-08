@@ -26,6 +26,15 @@ module "net-sg" {
       cidr_blocks = "0.0.0.0/0"
     }
   ]
+  egress_with_cidr_blocks = [
+    {
+      from_port       = 0
+      to_port         = 0
+      protocol        = "-1"
+      description     = "Allow All Outbound Traffic"
+      cidr_blocks     = "0.0.0.0/0"
+    }
+  ]
 }
 
 module "nginx_asg_key" {
@@ -74,7 +83,7 @@ module "asg" {
   update_default_version              = true
   image_id                            = "ami-08f49baa317796afd"
   instance_type                       = "t2.medium"
-  ebs_optimized                       = true
+  ebs_optimized                       = false
   enable_monitoring                   = true
   create_iam_instance_profile         = true
   iam_role_name                       = "nginx-asg-template"
@@ -84,7 +93,8 @@ module "asg" {
     CustomIamRole = "Yes"
   }
   iam_role_policies = {
-    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    AmazonEC2ContainerRegistryPullOnly  = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly"
   }
 
   block_device_mappings = [
@@ -118,6 +128,19 @@ module "asg" {
     Environment = "Experiments"
     Project     = "durianpay"
   }
+  user_data = <<-EOT
+IyEvYmluL2Jhc2gKCnN1ZG8geXVtIHVwZGF0ZSAteQpzdWRvIHl1bSBpbnN0YWxs
+IC15IHl1bS11dGlscyBkZXZpY2UtbWFwcGVyLXBlcnNpc3RlbnQtZGF0YSBsdm0y
+CnN1ZG8geXVtIGluc3RhbGwgZG9ja2VyIC15CnN1ZG8gc3lzdGVtY3RsIGVuYWJs
+ZSBkb2NrZXIKc3VkbyBzeXN0ZW1jdGwgc3RhcnQgZG9ja2VyCnN1ZG8gdXNlcm1v
+ZCAtYUcgZG9ja2VyICRVU0VSCm5ld2dycCBkb2NrZXIKYXdzIGVjciBnZXQtbG9n
+aW4tcGFzc3dvcmQgLS1yZWdpb24gYXAtc291dGhlYXN0LTEgfCBkb2NrZXIgbG9n
+aW4gLS11c2VybmFtZSBBV1MgLS1wYXNzd29yZC1zdGRpbiA1MzY2OTcyNjA0NjIu
+ZGtyLmVjci5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tCmRvY2tlciBydW4g
+LS1uYW1lIHdlYnNlcnZlciAtcCA4MDgwOjgwIDUzNjY5NzI2MDQ2Mi5ka3IuZWNy
+LmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vZHAvd2Vic2VydmVyOmxhdGVz
+dAo=
+  EOT
 }
 
 module "cpu_metric_alarm" {
