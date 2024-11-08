@@ -37,6 +37,5 @@ jobs:
           run: |
             for asg in $(aws autoscaling describe-auto-scaling-groups --query 'AutoScalingGroups[].AutoScalingGroupName' | awk -F'"' '{print $2}'); do
             aws autoscaling start-instance-refresh \
-              --auto-scaling-group-name $asg \
-              --preferences '{"MinHealthyPercentage": 99, "InstanceWarmup": 300, "SkipMatching": false}'
+              --auto-scaling-group-name $asg
             done
