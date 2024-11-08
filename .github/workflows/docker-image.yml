@@ -35,4 +35,4 @@ jobs:
             aws-region: ap-southeast-1  # Replace with your desired region
         - name: Trigger ASG Rolling Update
           run: |
-            aws autoscaling update-auto-scaling-group --auto-scaling-group-name nginx-asg-20241108074005082100000002 --desired-size 1 --min-size 2 --max-size 5
+            aws autoscaling set-desired-capacity --auto-scaling-group-name nginx-asg-20241108074005082100000002 --desired-capacity 1 --honor-cooldown
